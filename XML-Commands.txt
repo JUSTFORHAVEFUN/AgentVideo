@@ -1,0 +1,443 @@
+XMLVideoEditor XML 命令参考
+版本 1.6.0-gpu2d
+
+---
+
+文件结构
+
+<project>
+  <assets>      素材定义
+  <spaces>      3D 场景
+  <tracks>      轨道和片段
+  <relations>   时间关系
+</project>
+
+---
+
+project 根元素
+
+fps        帧率，默认 30
+width      画布宽，默认 1280
+height     画布高，默认 720
+duration   总时长秒，默认 5
+
+---
+
+asset 素材
+
+必须有 id 和 type 两个属性。
+
+type 可取值：
+
+color    纯色，属性 value
+         颜色格式 #rgb / #rrggbb / #rrggbbaa / CSS颜色名
+
+text     文字，属性 content
+
+svg      SVG 图，属性 src 或 content 或 CDATA 子节点
+
+image    位图，属性 src，支持 png/jpg/gif/webp
+
+audio    音频，属性 src
+
+video    视频，属性 src
+
+latex    LaTeX 公式，属性 content
+
+3d       3D 场景，子节点 camera / light / mesh
+
+---
+
+space3d 3D 场景
+
+属性：
+id         唯一标识
+duration   时长秒，默认 6
+bg         背景色，默认 #0a0e1a
+inherit    继承另一个 space3d 的 id
+fastpath   快速渲染模式，1 或 0，默认 0（视觉正确优先）
+
+子节点：
+camera     相机
+light      光源，可多个
+mesh       网格，可多个
+overlay    内联 2D 元素
+remove     移除继承来的元素 <remove id="xxx"/>
+
+合并规则，inherit：
+属性     child 有则覆盖
+camera   child 有则整体替换
+light    child 有则按 id 覆盖
+mesh     child 有则按 id 覆盖
+overlay  child 有则按 id 覆盖
+child 独有的元素追加
+
+---
+
+fastpath 快速渲染
+
+用途：
+把同类型的多个静态 mesh 自动合并成一次 draw call（GPU instancing）。
+大量重复元素（建筑群、星空、灯光柱、路面段）能大幅提速。
+
+用法：
+<space3d id="wide" inherit="rise" duration="4" fastpath="1">
+
+取值：
+fastpath="0"  默认，走单 mesh 渲染，光照完全正确
+fastpath="1"  走 instancing 加速，非均匀缩放下光照会变平（"贴纸感"）
+
+权衡：
+开启后 GPU 时间可能降 2 到 4 倍，但建筑、箱子这类非均匀缩放的物体
+会失去明暗面，看起来像平面色块。小尺寸物体（星星、灯柱、烟花球）
+肉眼几乎看不出差别；大面积物体（建筑）会明显变"贴"。
+
+建议：
+· 远景场景（建筑群在画面下方或远处）→ 开
+· 特写场景（建筑占大半屏）→ 关
+· 每段单独决定，不用一刀切
+
+注意：
+fastpath 只影响静态 mesh 的自动分组。它不影响：
+· 单 mesh 渲染（永远走正确路径）
+· 参数化实例（$var 语法，永远开启，属于功能而非优化）
+· 视锥剔除（永远开启）
+
+---
+
+camera 相机
+
+属性：
+pos        位置 "x y z"
+lookAt     注视点 "x y z"
+fov        视场角，度，默认 50
+
+子节点 animate 可动画 prop="pos" 或 prop="lookAt"
+
+示例：
+<camera pos="0 2.5 8" lookAt="0 0 0" fov="52">
+  <animate prop="pos" t0="0" t1="6" from="0 2.5 8" to="0 3 6.5" ease="ease-in-out"/>
+</camera>
+
+---
+
+light 光源
+
+属性：
+type       类型
+color      颜色，默认 #ffffff
+intensity  强度，默认 1
+
+type 可取值：
+ambient       环境光，只有 color 和 intensity
+directional   平行光，额外 dir="x y z"
+point         点光源，额外 pos="x y z" range="20"
+spot          聚光灯，额外 pos dir range angle
+
+angle 是锥形半角，度，默认 25
+最多 8 个光源，超出忽略
+
+子节点 animate 可动画 prop="pos" 或 prop="dir"
+
+---
+
+mesh 网格
+
+属性：
+id         唯一标识
+type       网格类型
+size       尺寸，格式取决于 type
+pos        位置 "x y z"
+rotate     旋转弧度 "rx ry rz"
+scale      缩放 "sx sy sz"，默认 1 1 1
+color      基色
+texture    纹理
+height     cylinder / cone / prism 专用
+seg        细分段数，wave / flag / curl 专用
+deform     顶点变形类型
+amp        变形幅度
+freq       变形频率
+speed      变形速度
+radius     curl 专用，弯曲半径
+
+type 可取值：
+cube      长方体，size="W H D" 或 "1"
+sphere    球体，size="R"
+cylinder  圆柱，size="R" height="H"
+cone      圆锥，size="R" height="H"
+prism     三棱柱，size="R" height="H"
+plane     水平平面，size="W H"
+paper     双面薄平面，size="W H"
+wave      水平波浪面，size="W H" seg="48" deform="wave"
+flag      竖直旗帜面，size="W H" seg="64" deform="flag"
+curl      卷曲平面，size="W H" seg="64" deform="curl" radius="1.2"
+
+deform 变形类型：
+wave      沿 Y 轴正弦波
+flag      末端飘动
+curl      绕 Y 轴弯曲
+
+重要：flag 类型必须同时写 deform="flag"，否则旗子不飘。
+
+子节点 animate 可动画 prop="pos" / "rotate" / "scale"
+
+---
+
+texture 纹理
+
+三种写法：
+
+文件路径     texture="logo.svg"
+Data URI    texture="data:image/png;base64,..."
+引用 asset   texture="asset:flagtex"
+
+多面不同纹理，cube 专用，竖线分隔最多 6 张：
+texture="tex1|tex2|tex3|tex4|tex5|tex6"
+
+纹理分辨率，仅 asset 引用有效：
+tex-width="768" tex-height="512"，默认 512x512
+
+---
+
+overlay 内联 2D
+
+放在 space3d 里。
+
+属性：
+asset      引用的 asset id
+x y        屏幕位置
+opacity    不透明度
+rotate     旋转，度
+scale      缩放
+w h        可选，指定尺寸
+t0 t1      相对场景本地时间窗口，秒
+fade-in    淡入时长
+fade-out   淡出时长
+
+注意 t0/t1 是场景本地时间。
+
+---
+
+track 轨道
+
+属性：
+id         唯一标识
+kind       类型，video / overlay / audio
+
+kind 说明：
+video      视频或背景层，最底
+overlay    叠加层，2D 文字图形图片
+audio      音轨，不显示
+
+---
+
+clip 片段
+
+属性：
+id         唯一标识
+asset      引用的 asset id
+space      引用的 space3d id，代替 asset
+duration   时长秒，默认用 project 的 duration
+loop       true 或 false，仅音频
+
+子节点：
+style      静态样式
+animate    动画
+element    子元素，分组用
+mask       蒙版
+content    内联内容
+
+分组示例：
+<clip id="grp" duration="10">
+  <style x="640" y="360"/>
+  <element asset="line1" x="0" y="-180"/>
+  <element asset="line2" x="0" y="180"/>
+</clip>
+element 的 x/y 是相对父 clip 的偏移。
+
+---
+
+style 样式
+
+通用属性：
+x          位置 x，屏幕坐标，左上角原点
+y          位置 y
+opacity    不透明度 0 到 1，默认 1
+scale      缩放，默认 1
+rotate     旋转，度，默认 0
+
+text 专用：
+color         颜色
+font-size     字号像素，默认 96
+font-family   字体，如 system-ui 或 sans-serif
+font-weight   normal / bold / 100 到 900
+align         left / center / right，默认 center
+
+image 专用：
+w             渲染宽像素
+h             渲染高像素
+
+audio 专用：
+volume        音量 0 到 1，默认 1
+fade-in       淡入时长秒
+fade-out      淡出时长秒
+
+---
+
+animate 动画
+
+子节点：
+keyframe   关键帧
+expr       表达式，每帧计算
+
+keyframe 属性：
+t          时间点秒，相对 clip 起点
+其它属性   该时间点的值，可多个同时写
+ease       到下一个 keyframe 的插值曲线
+
+同一属性至少两个 keyframe 才会动。
+
+expr 属性：
+prop       要控制的属性名
+value      表达式字符串
+
+expr 存在时 clip 被标记为动态。
+
+---
+
+表达式语法
+
+可用函数：
+sin cos tan asin acos atan atan2
+abs min max pow round
+sqrt exp log
+floor ceil
+
+可用常量：
+pi tau e
+
+可用变量：
+t          当前 clip 内时间秒
+以及当前已存在的属性 x y opacity scale rotate
+
+示例：
+value="640 + 350*sin(t*1.5)"
+value="360 + 50*cos(t*3)"
+value="t * 120"
+value="1 + 0.3*sin(t*3)"
+value="min(1, t / 0.5)"
+
+注意表达式无法访问 math.xxx。
+
+---
+
+relations 关系
+
+标签：
+start       指定开始时间，属性 clip at
+seq         顺序连接，属性 from to gap
+sync        按 BPM 同步，属性 clip bpm beat
+transition  转场，属性 from to duration effect
+
+effect 可选值：
+fade
+wipeleft wiperight wipeup wipedown
+slideleft slideright slideup slidedown
+circleopen circleclose
+rectcrop radial smoothleft smoothright
+
+---
+
+ease 缓动
+
+linear              线性，默认
+ease                平滑
+ease-in-out         平滑
+smoothstep          平滑
+ease-in             加速
+ease-in-quad        加速
+ease-out            减速
+ease-out-quad       减速
+ease-in-cubic       三次加速
+ease-out-cubic      三次减速
+ease-in-out-cubic   三次平滑
+ease-out-expo       指数减速
+back-out            过冲回落
+back-in             反向过冲
+
+---
+
+SVG 子集
+
+支持的标签：
+rect       x y width height fill stroke stroke-width opacity
+circle     cx cy r fill stroke stroke-width opacity
+ellipse    cx cy rx ry fill
+line       x1 y1 x2 y2 stroke stroke-width
+polygon    points fill stroke stroke-width
+polyline   points stroke stroke-width
+path       d fill stroke stroke-width，仅 M L H V C Q Z
+text       x y font-family font-size font-weight text-anchor dominant-baseline fill
+image      href x y width height，仅 data URI
+g          transform opacity
+
+支持的属性：
+fill fill-opacity stroke stroke-opacity stroke-width opacity transform
+
+transform 支持：
+matrix translate scale rotate skewX skewY
+
+遇到 mask / clipPath / linearGradient / radialGradient / filter / pattern / use / symbol 会回退 cairo。
+
+---
+
+注意事项
+
+1. 所有 XML 属性值用双引号
+2. 内嵌 SVG 用 CDATA 包裹
+3. flag 类型必须同时写 deform="flag"
+4. inherit 继承时坐标要自己保证连续
+5. mask 会导致 GPU 路径回退 cairo，慢 5 到 10 倍
+6. 坐标 "x y z" 用空格分隔，不是逗号
+7. 时间单位统一为秒
+8. camera fov 和 rotate 属性用度，shader 内部 rotate 用弧度
+9. 颜色支持 #rgb / #rrggbb / #rrggbbaa / CSS 颜色名
+10. 最多 8 个光源，最多 6 张纹理
+11. fastpath 是逐 space3d 的开关，非均匀缩放物体开启后会失去明暗面
+12. $var 参数化实例（$var + <param>）不受 fastpath 影响，永远启用
+
+---
+
+常用命令行
+
+python videoeditor.py project.xml
+python videoeditor.py project.xml --out=out.mp4
+python videoeditor.py project.xml --aggressive=3
+python videoeditor.py project.xml --exp-pipeline=3
+python videoeditor.py project.xml --exp-gpu-2d
+python videoeditor.py project.xml --exp-autocairo
+python videoeditor.py project.xml --purge
+python videoeditor.py project.xml --resume
+python videoeditor.py project.xml --preview
+
+推荐组合：
+python videoeditor.py project.xml --aggressive=3 --exp-pipeline=3 --exp-gpu-2d --purge
+
+单帧预览：
+python videoeditor.py project.xml --render-frame=3.5 --format=png
+python videoeditor.py project.xml --render-range=30:40 --out=chunk.mp4
+
+MP4 工具箱：
+python videoeditor.py --mp4-info video.mp4
+python videoeditor.py --mp4-snapshot video.mp4 --at=3.5 --format=png
+python videoeditor.py --mp4-trim video.mp4 --range=10:20 --out=cut.mp4
+python videoeditor.py --mp4-volume video.mp4 --volume=0.5
+python videoeditor.py --mp4-transform video.mp4 --crop=1280:720:100:50 --scale=640:360
+
+环境变量：
+XMLVE_2D              force / cairo / auto
+XMLVE_SYNTHETIC_BOLD  0 / 1 / 2 / strong
+XMLVE_AUTOCAIRO       1 / 0
+XMLVE_MERGE_COPY      1 / true
+XMLVE_FRAME_EXT       .png / .bmp
+XMLVIDEO_WORKDIR      路径

@@ -1,0 +1,46 @@
+# ── 备份文件（任何位置） ──
+*.bak
+*.bak*
+*.bak_*
+*.orig
+
+# ── 视频/音频素材（太大） ──
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+*.wav
+*.mid
+*.midi
+
+# ── 抽帧结果目录（可再生） ──
+kards_VF/
+kf_*/
+keys/
+vcompare/*/frames/
+vcompare/*/_raw/
+contrast/
+
+# ── 中间产物 ──
+tmp/
+backups/
+__pycache__/
+*.pyc
+
+# ── AI 模型（几百 MB） ──
+moss_tts/models/
+moss_tts/**/__pycache__/
+
+# ── 编辑器 ──
+.vscode/
+.idea/
+*.swp
+
+# ── 用户私有数据 ──
+guoqing.xml
+高一物理.xml
+project.xml
+*.log
+moss_tts/
+tts_engine.py
