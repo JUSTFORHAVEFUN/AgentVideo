@@ -232,8 +232,12 @@ def iter_frames(path, t_start=0.0, t_end=None, scale=1.0, rotation=0):
             buf = proc.stdout.read(frame_bytes)
             if len(buf) < frame_bytes:
                 break
+            t_cur = t_start + idx / fps
+            # 防止 -t 时长溢出：超过 t_end 就停
+            if t_end is not None and t_cur > t_end:
+                break
             arr = np.frombuffer(buf, dtype=np.uint8).reshape(h, w, 3)
-            yield t_start + idx / fps, arr, w, h
+            yield t_cur, arr, w, h
             idx += 1
     finally:
         try:
@@ -300,8 +304,14 @@ def _contour_density(contrast, percentile=99.0, block_size=16):
     return density
 
 
-def compute_saliency(rgb):
-    """(H, W, 3) uint8 → (H, W) float32 in [0,1]，越大越抢眼。"""
+def compute_saliency(rgb, blur_scale=1.0):
+    """(H, W, 3) uint8 → (H, W) float32 in [0,1]，越大越抢眼。
+
+    blur_scale: 高斯/UnsharpMask 半径缩放倍率。
+      1.0  默认（硬编码 8 / 6 / 2，按 640 宽设计）
+      <1.0 更锐利（分析分辨率小时更合适）
+      >1.0 更平滑
+    """
     if rgb.dtype != np.float32:
         rgb = rgb.astype(np.float32)
     contrast = _discrete_laplacian(rgb)
@@ -324,9 +334,10 @@ def compute_saliency(rgb):
         s.fill(0.0)
     color_norm = s
 
+    r_color = max(1.0, 8.0 * blur_scale)
     color_pil = Image.fromarray(
         (color_norm * 255).astype(np.uint8), mode='L'
-    ).filter(ImageFilter.GaussianBlur(radius=8))
+    ).filter(ImageFilter.GaussianBlur(radius=r_color))
     color_anomaly = np.asarray(color_pil, dtype=np.float32) / 255.0
 
     # ── combined：原地 ──
@@ -343,11 +354,13 @@ def compute_saliency(rgb):
         combined.fill(0.0)
     base = combined
 
+    r_macro = max(1.0, 6.0 * blur_scale)
+    r_unsharp = max(0.5, 2.0 * blur_scale)
     macro_pil = Image.fromarray(
         (base * 255).astype(np.uint8), mode='L'
-    ).filter(ImageFilter.GaussianBlur(radius=6))
+    ).filter(ImageFilter.GaussianBlur(radius=r_macro))
     macro_pil = macro_pil.filter(
-        ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+        ImageFilter.UnsharpMask(radius=r_unsharp, percent=150, threshold=3))
     return np.asarray(macro_pil, dtype=np.float32) / 255.0
 
 
@@ -377,6 +390,22 @@ def _scan_one_chunk(video_path, t_start, t_end, opts, video_info,
         DW, DH = W, H
     a_scale = min(1.0, opts['analysis_width'] / max(1, DW))
     _stride = max(1, opts['analysis_stride'])
+
+    # ── blur_scale 解析（exp 开关）──
+    # 未启用 → 1.0（保持硬编码 radius 8/6/2）
+    # --exp-blur-scale=auto  → 按实际分析宽度 / 640 缩放
+    # --exp-blur-scale=N     → 手动倍数
+    _blur_raw = opts.get('exp_blur_scale')
+    if _blur_raw is None:
+        _blur_scale = 1.0
+    elif isinstance(_blur_raw, str) and _blur_raw.lower() == 'auto':
+        _actual_w = min(DW, opts['analysis_width'])
+        _blur_scale = max(0.25, _actual_w / 640.0)
+    else:
+        try:
+            _blur_scale = max(0.1, min(4.0, float(_blur_raw)))
+        except (ValueError, TypeError):
+            _blur_scale = 1.0
 
     candidates = []
     n_total = 0
@@ -409,7 +438,7 @@ def _scan_one_chunk(video_path, t_start, t_end, opts, video_info,
 
         sal = None
         if not opts['no_focus']:
-            sal = compute_saliency(rgb)
+            sal = compute_saliency(rgb, blur_scale=_blur_scale)
 
         reasons = []
         diff_val = 0.0
@@ -437,6 +466,10 @@ def _scan_one_chunk(video_path, t_start, t_end, opts, video_info,
                     reasons.append('focus')
 
         if not reasons:
+            continue
+
+        # 兜底：绝不接受超出 [t_start, t_end] 的候选
+        if t > t_end + 1e-6:
             continue
 
         if 'first' in reasons:
@@ -713,6 +746,137 @@ def extract_frame_at(video_path, t, out_path, src_w=None, src_h=None,
     return r.returncode == 0 and Path(out_path).exists()
 
 
+
+
+# ============================================================
+# 批量抽帧：一次 ffmpeg 抽多帧
+# ============================================================
+def _extract_batch(video_path, candidates, frames_dir, opts,
+                    DW, DH, rotation, ext, fps):
+    """一次 ffmpeg 抽一批帧。
+
+    参数：
+      candidates  候选帧列表（含 t / reason）
+      frames_dir  目标目录
+      DW, DH      显示尺寸
+      rotation    旋转角度（0 表示已修正）
+      ext         输出格式
+      fps         帧率（用于 t → 帧号）
+
+    返回：新的 candidates（带 path 字段）或 None（表示回退逐帧）
+
+    要求：
+      · len(candidates) >= 2
+      · 所有候选 t 映射到不同的帧号（否则同一帧抽两次会冲突）
+      · fps 合理（1 < fps < 240）
+    """
+    if not candidates or len(candidates) < 2:
+        return None
+    if fps <= 1.0 or fps > 240.0:
+        return None
+
+    # 候选里不能有和前一帧同时间点的（去重保护）
+    candidates = sorted(candidates, key=lambda c: c['t'])
+    dedup = []
+    last_t = -1e9
+    for c in candidates:
+        if c['t'] - last_t > 0.01:   # 至少差 10ms
+            dedup.append(c)
+            last_t = c['t']
+    if len(dedup) < 2:
+        return None
+    candidates = dedup
+
+    t_first = candidates[0]['t']
+    t_last = candidates[-1]['t']
+    span = t_last - t_first + 0.5   # 半秒余量
+
+    # 时间 → 帧号（相对 t_first）
+    fns = []
+    for c in candidates:
+        n = int(round((c['t'] - t_first) * fps))
+        fns.append(max(0, n))
+
+    # 帧号必须唯一，否则回退
+    if len(set(fns)) != len(fns):
+        return None
+
+    # select 表达式（逗号要转义成 \,）
+    sel = '+'.join(f'eq(n\\,{n})' for n in fns)
+
+    # 目标尺寸
+    if opts['frame_max'] > 0:
+        long_edge = max(DW, DH)
+        if long_edge > opts['frame_max']:
+            if DW >= DH:
+                tw = opts['frame_max']
+                th = int(DH * opts['frame_max'] / DW) // 2 * 2
+            else:
+                th = opts['frame_max']
+                tw = int(DW * opts['frame_max'] / DH) // 2 * 2
+        else:
+            tw, th = DW, DH
+    elif opts['frame_w'] > 0 and opts['frame_h'] > 0:
+        k = min(opts['frame_w'] / DW, opts['frame_h'] / DH)
+        if k >= 1.0:
+            tw, th = DW, DH
+        else:
+            tw = int(DW * k) // 2 * 2
+            th = int(DH * k) // 2 * 2
+    else:
+        tw, th = DW, DH
+
+    # 临时目录
+    tmp_dir = frames_dir / '_batch_tmp'
+    if tmp_dir.exists():
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    cmd = ['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error',
+           '-ss', f'{t_first:.3f}',
+           '-i', str(video_path),
+           '-t', f'{span:.3f}',
+           '-vf', f"select='{sel}',scale={tw}:{th}",
+           '-vsync', '0',
+           '-q:v', '2',
+           str(tmp_dir / f'f_%04d.{ext}')]
+
+    try:
+        r = subprocess.run(cmd, capture_output=True, timeout=600)
+    except Exception:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return None
+
+    if r.returncode != 0:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return None
+
+    files = sorted(tmp_dir.glob(f'f_*.{ext}'))
+    if len(files) != len(candidates):
+        print(f"    [batch] 数量不匹配: 期望 {len(candidates)}, 得 {len(files)}",
+              file=sys.stderr)
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return None
+
+    # 移动到目标位置
+    result = []
+    for i, (c, src) in enumerate(zip(candidates, files)):
+        name = f"f_{c['t']:08.2f}_{c['reason']}.{ext}"
+        dst = frames_dir / name
+        try:
+            if dst.exists():
+                dst.unlink()
+            shutil.move(str(src), str(dst))
+            c2 = dict(c)
+            c2['path'] = str(dst)
+            result.append(c2)
+        except Exception:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            return None
+
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    return result
+
 # ============================================================
 # 上限裁剪：分段取最高分
 # ============================================================
@@ -803,6 +967,8 @@ def main():
         'analysis_width': 640,
         'no_focus': False,
         'no_fixed': False,
+        'exp_blur_scale': None,
+        'no_extract_batch': False,
         'json_out': None,
         't_start': None, 't_end': None,
         'ext': 'jpg',
@@ -843,6 +1009,18 @@ def main():
             except ValueError: pass
         elif a == '--no-focus': opts['no_focus'] = True
         elif a == '--no-fixed': opts['no_fixed'] = True
+        elif a == '--no-extract-batch': opts['no_extract_batch'] = True
+        elif a == '--exp-blur-scale':
+            opts['exp_blur_scale'] = 'auto'
+        elif a.startswith('--exp-blur-scale='):
+            v = a.split('=', 1)[1].strip().lower()
+            if v in ('auto', 'a'):
+                opts['exp_blur_scale'] = 'auto'
+            else:
+                try:
+                    opts['exp_blur_scale'] = float(v)
+                except ValueError:
+                    opts['exp_blur_scale'] = 'auto'
         elif a.startswith('--json='): opts['json_out'] = a.split('=', 1)[1]
         elif a.startswith('--ext='):
             e = a.split('=', 1)[1].strip().lower().lstrip('.')
@@ -994,6 +1172,15 @@ def main():
     a_scale = min(1.0, opts['analysis_width'] / max(1, DW))
     _aw = int(W * a_scale); _ah = int(H * a_scale)
     print(f"  · 分析分辨率 {_aw}x{_ah}  stride={opts['analysis_stride']}")
+    _bs_raw = opts.get('exp_blur_scale')
+    if _bs_raw is not None:
+        if isinstance(_bs_raw, str) and _bs_raw == 'auto':
+            _actual_w = min(DW, opts['analysis_width'])
+            _bs_val = max(0.25, _actual_w / 640.0)
+            print(f"  · [exp] blur-scale=auto → {_bs_val:.2f}  "
+                  f"(radius 8→{8*_bs_val:.1f}, 6→{6*_bs_val:.1f}, 2→{max(0.5,2*_bs_val):.1f})")
+        else:
+            print(f"  · [exp] blur-scale={_bs_raw}")
     if _aw > 400 and opts['analysis_width'] > 400:
         print(f"    (提示: --analysis-width=320 可再快 3~4 倍，精度影响很小)")
 
@@ -1091,28 +1278,61 @@ def main():
                   f"({len(candidates)} 张)...")
 
         ok_count = 0
-        for idx, c in enumerate(candidates, 1):
-            name = f"f_{c['t']:08.2f}_{c['reason']}.{opts['ext']}"
-            out_path = frames_dir_c / name
-            if extract_frame_at(opts['in'], c['t'], out_path,
-                                 src_w=DW, src_h=DH,
-                                 max_size=opts['frame_max'],
-                                 max_w=opts['frame_w'] if opts['frame_max'] == 0 else 0,
-                                 max_h=opts['frame_h'] if opts['frame_max'] == 0 else 0,
-                                 rotation=_rot):
-                c['path'] = str(out_path)
-                c['chunk'] = ci
-                ok_count += 1
+        batch_ok = False
+
+        # ── 优先尝试批量抽帧 ──
+        if (not opts.get('no_extract_batch', False)
+                and len(candidates) >= 2):
+            t_batch = time.time()
+            bt = _extract_batch(
+                opts['in'], candidates, frames_dir_c,
+                opts, DW, DH, _rot, opts['ext'], fps)
+            if bt is not None:
+                candidates = bt
+                for c in candidates:
+                    c['chunk'] = ci
+                ok_count = len(candidates)
+                batch_ok = True
+                dt_batch = time.time() - t_batch
+                print(f"    [batch] {ok_count} 帧一次抽出  "
+                      f"{dt_batch:.1f}s", flush=True)
+                # 加水印
                 if not opts['no_watermark'] and opts['ext'] in ('jpg', 'jpeg'):
-                    wm_text = f"{c['t']:.2f}s  [{c['reason']}]  #{idx:03d}"
-                    add_watermark(str(out_path), wm_text,
-                                  style=opts['watermark_style'])
-            else:
-                print(f"    ⚠ 抽帧失败 t={c['t']}", file=sys.stderr)
-                c['path'] = None
-            if idx % 10 == 0 or idx == len(candidates):
-                el2 = time.time() - t_extract0
-                print(f"    {idx}/{len(candidates)}  {el2:.1f}s", flush=True)
+                    for idx, c in enumerate(candidates, 1):
+                        try:
+                            add_watermark(c['path'],
+                                          f"{c['t']:.2f}s  [{c['reason']}]  #{idx:03d}",
+                                          style=opts['watermark_style'])
+                        except Exception:
+                            pass
+
+        # ── 回退逐帧 ──
+        if not batch_ok:
+            if len(candidates) >= 2:
+                print(f"    [batch] 失败，回退逐帧", flush=True)
+            for idx, c in enumerate(candidates, 1):
+                name = f"f_{c['t']:08.2f}_{c['reason']}.{opts['ext']}"
+                out_path = frames_dir_c / name
+                if extract_frame_at(opts['in'], c['t'], out_path,
+                                     src_w=DW, src_h=DH,
+                                     max_size=opts['frame_max'],
+                                     max_w=opts['frame_w'] if opts['frame_max'] == 0 else 0,
+                                     max_h=opts['frame_h'] if opts['frame_max'] == 0 else 0,
+                                     rotation=_rot):
+                    c['path'] = str(out_path)
+                    c['chunk'] = ci
+                    ok_count += 1
+                    if not opts['no_watermark'] and opts['ext'] in ('jpg', 'jpeg'):
+                        wm_text = f"{c['t']:.2f}s  [{c['reason']}]  #{idx:03d}"
+                        add_watermark(str(out_path), wm_text,
+                                      style=opts['watermark_style'])
+                else:
+                    print(f"    ⚠ 抽帧失败 t={c['t']}", file=sys.stderr)
+                    c['path'] = None
+                if idx % 10 == 0 or idx == len(candidates):
+                    el2 = time.time() - t_extract0
+                    print(f"    {idx}/{len(candidates)}  {el2:.1f}s",
+                          flush=True)
 
         candidates = [c for c in candidates if c.get('path')]
         total_ok += len(candidates)
