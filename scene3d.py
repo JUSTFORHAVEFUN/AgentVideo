@@ -2,6 +2,8 @@
 """
 scene3d.py v4 —— GPU 3D + 多光源 + 每面不同纹理 + 球/柱/锥
 """
+__version__ = '1.0.1'
+
 from __future__ import annotations
 
 import base64

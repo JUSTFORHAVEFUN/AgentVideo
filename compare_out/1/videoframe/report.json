@@ -1,0 +1,403 @@
+{
+  "video": {
+    "path": "1.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 30.0,
+    "duration": 62.8,
+    "n_frames": 1800,
+    "rotation": 0
+  },
+  "params": {
+    "every": 2.0,
+    "diff_threshold": 0.08,
+    "focus_threshold": 0.3,
+    "cooldown": 0.05,
+    "max_frames": 45,
+    "chunk_sec": 0,
+    "chunk_parallel": 2
+  },
+  "chunks": [
+    {
+      "chunk": 0,
+      "t_start": 0.0,
+      "t_end": 60.0,
+      "stats": {
+        "total": 45,
+        "first": 1,
+        "fixed": 0,
+        "content": 15,
+        "focus": 29
+      }
+    }
+  ],
+  "frames": [
+    {
+      "t": 0.0,
+      "reason": "first",
+      "diff": 0.0,
+      "focus_val": 0.0,
+      "path": "compare_out/1/videoframe/frames/f_00000.00_first.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 1.8,
+      "reason": "focus",
+      "diff": 0.3235,
+      "focus_val": 0.4627,
+      "path": "compare_out/1/videoframe/frames/f_00001.80_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 2.733,
+      "reason": "content",
+      "diff": 0.3033,
+      "focus_val": 0.1961,
+      "path": "compare_out/1/videoframe/frames/f_00002.73_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 5.0,
+      "reason": "focus",
+      "diff": 0.191,
+      "focus_val": 0.3294,
+      "path": "compare_out/1/videoframe/frames/f_00005.00_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 5.533,
+      "reason": "focus",
+      "diff": 0.2901,
+      "focus_val": 0.3647,
+      "path": "compare_out/1/videoframe/frames/f_00005.53_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 6.667,
+      "reason": "focus",
+      "diff": 0.2412,
+      "focus_val": 0.3412,
+      "path": "compare_out/1/videoframe/frames/f_00006.67_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 8.8,
+      "reason": "content",
+      "diff": 0.3287,
+      "focus_val": 0.1961,
+      "path": "compare_out/1/videoframe/frames/f_00008.80_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 10.0,
+      "reason": "focus",
+      "diff": 0.2118,
+      "focus_val": 0.302,
+      "path": "compare_out/1/videoframe/frames/f_00010.00_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 10.8,
+      "reason": "content",
+      "diff": 0.2963,
+      "focus_val": 0.2863,
+      "path": "compare_out/1/videoframe/frames/f_00010.80_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 13.267,
+      "reason": "focus",
+      "diff": 0.2663,
+      "focus_val": 0.3098,
+      "path": "compare_out/1/videoframe/frames/f_00013.27_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 13.467,
+      "reason": "focus",
+      "diff": 0.1523,
+      "focus_val": 0.4667,
+      "path": "compare_out/1/videoframe/frames/f_00013.47_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 15.0,
+      "reason": "focus",
+      "diff": 0.3141,
+      "focus_val": 0.4157,
+      "path": "compare_out/1/videoframe/frames/f_00015.00_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 16.0,
+      "reason": "focus",
+      "diff": 0.1162,
+      "focus_val": 0.3412,
+      "path": "compare_out/1/videoframe/frames/f_00016.00_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 18.133,
+      "reason": "content",
+      "diff": 0.2432,
+      "focus_val": 0.2392,
+      "path": "compare_out/1/videoframe/frames/f_00018.13_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 19.733,
+      "reason": "focus",
+      "diff": 0.0743,
+      "focus_val": 0.4,
+      "path": "compare_out/1/videoframe/frames/f_00019.73_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 20.733,
+      "reason": "content",
+      "diff": 0.1178,
+      "focus_val": 0.2549,
+      "path": "compare_out/1/videoframe/frames/f_00020.73_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 21.333,
+      "reason": "content",
+      "diff": 0.2864,
+      "focus_val": 0.2157,
+      "path": "compare_out/1/videoframe/frames/f_00021.33_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 23.533,
+      "reason": "focus",
+      "diff": 0.2258,
+      "focus_val": 0.3216,
+      "path": "compare_out/1/videoframe/frames/f_00023.53_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 25.133,
+      "reason": "focus",
+      "diff": 0.1186,
+      "focus_val": 0.5725,
+      "path": "compare_out/1/videoframe/frames/f_00025.13_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 26.133,
+      "reason": "focus",
+      "diff": 0.1568,
+      "focus_val": 0.3255,
+      "path": "compare_out/1/videoframe/frames/f_00026.13_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 26.867,
+      "reason": "focus",
+      "diff": 0.2813,
+      "focus_val": 0.3686,
+      "path": "compare_out/1/videoframe/frames/f_00026.87_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 28.0,
+      "reason": "content",
+      "diff": 0.3149,
+      "focus_val": 0.1608,
+      "path": "compare_out/1/videoframe/frames/f_00028.00_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 30.067,
+      "reason": "content",
+      "diff": 0.1437,
+      "focus_val": 0.2902,
+      "path": "compare_out/1/videoframe/frames/f_00030.07_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 31.6,
+      "reason": "focus",
+      "diff": 0.2819,
+      "focus_val": 0.5176,
+      "path": "compare_out/1/videoframe/frames/f_00031.60_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 32.133,
+      "reason": "focus",
+      "diff": 0.1016,
+      "focus_val": 0.3569,
+      "path": "compare_out/1/videoframe/frames/f_00032.13_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 34.2,
+      "reason": "focus",
+      "diff": 0.2803,
+      "focus_val": 0.3882,
+      "path": "compare_out/1/videoframe/frames/f_00034.20_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 34.733,
+      "reason": "focus",
+      "diff": 0.1329,
+      "focus_val": 0.5098,
+      "path": "compare_out/1/videoframe/frames/f_00034.73_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 36.6,
+      "reason": "content",
+      "diff": 0.2864,
+      "focus_val": 0.2824,
+      "path": "compare_out/1/videoframe/frames/f_00036.60_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 38.4,
+      "reason": "focus",
+      "diff": 0.1589,
+      "focus_val": 0.302,
+      "path": "compare_out/1/videoframe/frames/f_00038.40_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 39.4,
+      "reason": "content",
+      "diff": 0.2676,
+      "focus_val": 0.251,
+      "path": "compare_out/1/videoframe/frames/f_00039.40_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 40.467,
+      "reason": "focus",
+      "diff": 0.2608,
+      "focus_val": 0.3765,
+      "path": "compare_out/1/videoframe/frames/f_00040.47_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 42.4,
+      "reason": "focus",
+      "diff": 0.182,
+      "focus_val": 0.5059,
+      "path": "compare_out/1/videoframe/frames/f_00042.40_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 43.8,
+      "reason": "content",
+      "diff": 0.2158,
+      "focus_val": 0.2431,
+      "path": "compare_out/1/videoframe/frames/f_00043.80_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 45.0,
+      "reason": "focus",
+      "diff": 0.2891,
+      "focus_val": 0.4157,
+      "path": "compare_out/1/videoframe/frames/f_00045.00_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 46.2,
+      "reason": "focus",
+      "diff": 0.3018,
+      "focus_val": 0.4471,
+      "path": "compare_out/1/videoframe/frames/f_00046.20_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 46.867,
+      "reason": "content",
+      "diff": 0.2458,
+      "focus_val": 0.2431,
+      "path": "compare_out/1/videoframe/frames/f_00046.87_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 48.133,
+      "reason": "content",
+      "diff": 0.273,
+      "focus_val": 0.2667,
+      "path": "compare_out/1/videoframe/frames/f_00048.13_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 50.333,
+      "reason": "focus",
+      "diff": 0.1021,
+      "focus_val": 0.4275,
+      "path": "compare_out/1/videoframe/frames/f_00050.33_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 50.867,
+      "reason": "focus",
+      "diff": 0.2839,
+      "focus_val": 0.349,
+      "path": "compare_out/1/videoframe/frames/f_00050.87_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 52.733,
+      "reason": "content",
+      "diff": 0.254,
+      "focus_val": 0.2392,
+      "path": "compare_out/1/videoframe/frames/f_00052.73_content.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 53.6,
+      "reason": "focus",
+      "diff": 0.1225,
+      "focus_val": 0.3176,
+      "path": "compare_out/1/videoframe/frames/f_00053.60_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 55.6,
+      "reason": "focus",
+      "diff": 0.2596,
+      "focus_val": 0.3059,
+      "path": "compare_out/1/videoframe/frames/f_00055.60_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 56.733,
+      "reason": "focus",
+      "diff": 0.112,
+      "focus_val": 0.3922,
+      "path": "compare_out/1/videoframe/frames/f_00056.73_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 57.6,
+      "reason": "focus",
+      "diff": 0.2894,
+      "focus_val": 0.3686,
+      "path": "compare_out/1/videoframe/frames/f_00057.60_focus.jpg",
+      "chunk": 0
+    },
+    {
+      "t": 58.867,
+      "reason": "content",
+      "diff": 0.3004,
+      "focus_val": 0.2549,
+      "path": "compare_out/1/videoframe/frames/f_00058.87_content.jpg",
+      "chunk": 0
+    }
+  ],
+  "stats": {
+    "total": 45,
+    "first": 1,
+    "fixed": 0,
+    "content": 15,
+    "focus": 29
+  }
+}

@@ -44,3 +44,6 @@ project.xml
 *.log
 moss_tts/
 tts_engine.py
+vcompare/
+vcompare/
+vman.py

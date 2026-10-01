@@ -1,0 +1,24 @@
+{
+  "latest": "1.0.1",
+  "supported": [
+    "1.0.1"
+  ],
+  "deprecated": [],
+  "hashes": {
+    "1.0.1": {
+      "raster2d.py": "sha256:63746188f33eedf591d2c8027864e2fd30d584d6b00d3c12f9979b01ef35ee2e",
+      "scene2d.py": "sha256:4559744c2cd22b939c28a9300f1a9d6fa5f172fc55aba72bc45a20715ba2f685",
+      "scene3d.py": "sha256:3741cf3c879fd377e927d95737d6339a18a93eeca30592e405fba24c4ac136aa",
+      "tts_engine.py": "sha256:91eb73125160fcf02ce7713ae78bed3530c85cf523d328e92483eb3c6163630e",
+      "vcompare.py": "sha256:50272cc2d4c7af7e238e4417623a74fab118a3cdd62c65d87f887064fa325345",
+      "videoeditor.py": "sha256:1f2c2b6706c7fedfbc215dc2a983e8193fcbca30db76945511ae0726ef1586e0",
+      "videoframe.py": "sha256:a88e8f605df772a9cfacaa138ed592045cc951c0d2be80020781464a309130da",
+      "xmlmusic.py": "sha256:3ac32d98c106843ea1feb63c4417f7003233a9c9bd4c3f18a63e63ca1eb4c4f4"
+    }
+  },
+  "repo": {
+    "owner": "",
+    "name": "",
+    "branch": "master"
+  }
+}

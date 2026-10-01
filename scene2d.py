@@ -8,6 +8,9 @@ scene2d.py v2 —— SVG 子集 → Raster2D（GPU）
   · transform: translate/scale/rotate/matrix/skewX/skewY
   · 属性: fill, opacity, stroke, stroke-width, text-anchor, font-family
 """
+# scene2d.py
+__version__ = '1.0.1'
+
 from __future__ import annotations
 import base64, math, re, sys
 import xml.etree.ElementTree as ET

@@ -14,6 +14,8 @@ videoframe.py v0.1 — 智能视频抽帧
   python videoframe.py --in=video.mp4 --out=keys/ --every=1.0 --max-frames=100
   python videoframe.py --in=video.mp4 --out=keys/ --no-focus
 """
+__version__ = '1.0.1'
+
 import sys, os, json, subprocess, time, shutil
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -30,7 +32,7 @@ try:
 except ImportError:
     _HAS_PIL = False
 
-__version__ = '0.1'
+__version__ = '1.0.1'
 
 
 # ============================================================
