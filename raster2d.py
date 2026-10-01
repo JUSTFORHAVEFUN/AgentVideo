@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """raster2d.py — GPU 2D 光栅化器（EGL/GLES3 + block-atlas 字体）"""
 # raster2d.py
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 from __future__ import annotations
 import ctypes, hashlib, math, os, re, sys, subprocess

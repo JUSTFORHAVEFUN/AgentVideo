@@ -11,7 +11,7 @@ v0.2 新增：
   · 立体声 + pan + delay + reverb
   · MIDI 导出
 """
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 import sys, wave, re, struct
 from pathlib import Path

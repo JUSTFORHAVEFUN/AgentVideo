@@ -1,7 +1,8 @@
 {
-  "latest": "1.0.1",
+  "latest": "1.0.2",
   "supported": [
-    "1.0.1"
+    "1.0.1",
+    "1.0.2"
   ],
   "deprecated": [],
   "hashes": {
@@ -14,6 +15,16 @@
       "videoeditor.py": "sha256:1f2c2b6706c7fedfbc215dc2a983e8193fcbca30db76945511ae0726ef1586e0",
       "videoframe.py": "sha256:a88e8f605df772a9cfacaa138ed592045cc951c0d2be80020781464a309130da",
       "xmlmusic.py": "sha256:3ac32d98c106843ea1feb63c4417f7003233a9c9bd4c3f18a63e63ca1eb4c4f4"
+    },
+    "1.0.2": {
+      "raster2d.py": "sha256:6f185588823319a247486d9efdea66e11733687da82459825c9ce46e937aca60",
+      "scene2d.py": "sha256:b381f40ccdcd6e006b4a51118b804b3313bfdd06d45a25d9a92bb6623bd1221e",
+      "scene3d.py": "sha256:777ddfd2a7ca1e3a20780c6c3b1c74613a1fe501a4a95517d1caaefb8d8c9973",
+      "tts_engine.py": "sha256:91eb73125160fcf02ce7713ae78bed3530c85cf523d328e92483eb3c6163630e",
+      "vcompare.py": "sha256:50272cc2d4c7af7e238e4417623a74fab118a3cdd62c65d87f887064fa325345",
+      "videoeditor.py": "sha256:c4110ed038c50b58f05064fd70c78ef4799193529188b5f0cd0bc58d94b1e843",
+      "videoframe.py": "sha256:4b96810421fb50106770625983fafc40af3c08d651775e05b1f7201dbf766025",
+      "xmlmusic.py": "sha256:c33c1be81de6af25a210274b4c1309424d356765515389a9596eb24b80999fb0"
     }
   },
   "repo": {

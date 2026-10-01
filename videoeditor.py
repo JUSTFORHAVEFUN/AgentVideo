@@ -37,7 +37,7 @@ v1.0.3-rc.5 保留：
   python videoeditor.py --mp4-volume video.mp4 --volume=0.3 --out=quieter.mp4
   python videoeditor.py --mp4-transform video.mp4 --crop=1280:720:100:50 --scale=640:360
 """
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 import re, os, sys, math, base64, shutil, hashlib, subprocess, time, traceback, json, copy
 from pathlib import Path
@@ -52,7 +52,7 @@ try:
 except ImportError:
     _HAS_NUMPY = False
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 # 视锥剔除开关（环境变量控制，无 exp 前缀）
 _CULL_ENABLED = os.environ.get('XMLVE_NO_CULL') != '1'
